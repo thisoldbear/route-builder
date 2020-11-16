@@ -1,3 +1,26 @@
 .app {
   display: flex;
 }
+
+.github {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 10px;
+  background-color: #383838;
+  z-index: 999;
+}
+
+.github a {
+  font-size: 12px;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.github img {
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+}

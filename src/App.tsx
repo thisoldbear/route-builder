@@ -13,6 +13,10 @@ function App() {
         <Sidebar />
         <Map />
       </ContextProvider>
+      <div className="github">
+        <img alt="GitHub Logo" src="github.png" />
+        <a href="https://github.com/thisoldbear/route-builder">View on GitHub</a>
+      </div>
     </div>
   );
 }
