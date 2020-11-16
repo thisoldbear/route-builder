@@ -1,0 +1,15 @@
+.sidebar {
+  height: 100vh;
+  width: 320px;
+  padding: 30px;
+  background-color: #383838;
+  display: flex;
+  flex-direction: column;
+
+  h1 {
+    color: #ffffff;
+    font-size: 22px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #4c4c4c;
+  }
+}
