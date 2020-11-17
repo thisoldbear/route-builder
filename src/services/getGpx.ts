@@ -2,8 +2,8 @@ import axios from "axios";
 
 import { WaypointStateItem } from "../context/Context";
 
-const createCoordinatesQueryString = (obj: WaypointStateItem) => {
-  return Object.entries(obj)
+const createCoordinatesQueryString = (waypoints: WaypointStateItem) => {
+  return Object.entries(waypoints)
     .reduce((acc, curr) => {
       const [, val] = curr;
       const string = `point=${val.lat},${val.lng}`;
@@ -12,8 +12,12 @@ const createCoordinatesQueryString = (obj: WaypointStateItem) => {
     .join("&");
 };
 
-export const getGpx = (obj: WaypointStateItem) => {
-  const routeQs = createCoordinatesQueryString(obj);
+export const getGpx = (waypoints: WaypointStateItem) => {
+  if (Object.entries(waypoints).length <= 1) {
+    return null;
+  }
+
+  const routeQs = createCoordinatesQueryString(waypoints);
 
   return (
     axios

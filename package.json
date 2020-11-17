@@ -12,6 +12,7 @@
     "@types/react": "^16.9.53",
     "@types/react-dom": "^16.9.8",
     "axios": "^0.21.0",
+    "gpxparser": "^3.0.6",
     "leaflet": "^1.7.1",
     "leaflet-gpx": "^1.5.0",
     "react": "^17.0.1",

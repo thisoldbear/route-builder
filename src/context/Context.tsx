@@ -1,43 +1,40 @@
-import React, { createContext, useReducer, useEffect, useState } from "react";
+import React, { createContext, useReducer, useEffect, useRef } from "react";
 import { getGpx } from "../services/getGpx";
-
+import { updateWaypointsToNearestCoords } from "../utils/updateWaypointsToNearestCoords";
 export interface Waypoint {
-  id: string;
+  id?: string;
   lat: number;
   lng: number;
   number: number;
 }
 
 export interface WaypointStateItem {
-  [id: string]: Waypoint
-}
-
-export interface WaypointsState {
-  waypointsState: WaypointStateItem;
-  setWaypointsState: React.Dispatch<React.SetStateAction<Waypoint>>;
+  [id: string]: Waypoint;
 }
 
 export type Gpx = string | null;
 
-export interface GpxState {
-  gpxState: Gpx;
-  setGpxState: React.Dispatch<React.SetStateAction<Gpx>>;
+export interface State {
+  waypoints: WaypointStateItem;
+  gpx: Gpx;
+  timestamp: number;
 }
 
 interface ContextProps {
-  waypointsState: WaypointsState;
-  waypointsDispatch: React.Dispatch<WaypointsAction>;
-  gpxState: Gpx;
+  state: State;
+  dispatch: React.Dispatch<StateAction>;
 }
 
-export enum WaypointsActionType {
-  Add = "ADD",
-  Remove = "REMOVE",
-  Reorder = "REORDER",
+export enum StateActionType {
+  AddWaypoint = "ADD_WAYPOINT",
+  RemoveWaypoint = "REMOVE_WAYPOINT",
+  ReorderWaypoint = "REORDER_WAYPOINT",
+  UpdateWaypoint = "UPDATE_WAYPOINT",
+  UpdateGpx = "UPDATE_GPX",
 }
 
-export interface WaypointsAction {
-  type: WaypointsActionType;
+export interface StateAction {
+  type: StateActionType;
   payload: any;
 }
 
@@ -45,106 +42,151 @@ interface ContextProviderProps {
   children: React.ReactNode;
 }
 
+
+
 const Context = createContext<Partial<ContextProps>>({});
 
 const ContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
-  const initialWaypointsState = {};
+  const initialState = {
+    waypoints: {},
+    gpx: null,
+    timestamp: null,
+  };
 
-  const waypointsReducer = (currentState: WaypointStateItem, action: WaypointsAction) => {
+  const timestamp = useRef(Date.now());
+
+  const reducer = (currentState: State, action: StateAction) => {
     switch (action.type) {
-      case WaypointsActionType.Add:
+      case StateActionType.AddWaypoint:
         // Add the item to state
         const stateWithAdded = {
           ...currentState,
-          [`${action.payload.lat}${action.payload.lng}`]: {
-            lat: action.payload.lat,
-            lng: action.payload.lng,
-            number: Object.entries(currentState).length + 1,
+          timestamp: Date.now(),
+          waypoints: {
+            ...currentState.waypoints,
+            [`${action.payload.lat}${action.payload.lng}`]: {
+              lat: action.payload.lat,
+              lng: action.payload.lng,
+              number: Object.entries(currentState.waypoints).length + 1,
+            },
           },
         };
 
         return stateWithAdded;
 
-      case WaypointsActionType.Remove:
+      case StateActionType.RemoveWaypoint:
         // Removes the waypoint from state using the id, in a slightly convoluted way :-\
-        const stateWithRemoved = Object.entries(currentState).reduce(
-          (acc, [currId, currVal]) => {
-            if (currId !== action.payload.id) {
-              return {
-                ...acc,
-                [currId]: {
-                  ...(currVal as {}),
-                },
-              };
-            }
-            return acc;
-          },
-          {}
-        );
+        const waypointsWithRemoved = Object.entries(
+          currentState.waypoints
+        ).reduce((acc, [currId, currVal]) => {
+          if (currId !== action.payload.id) {
+            return {
+              ...acc,
+              [currId]: {
+                ...(currVal as {}),
+              },
+            };
+          }
+          return acc;
+        }, {});
 
         // Iterate over the new state (again :sad:) to update the number
         // In the real world, we likely can't rely on this alone as the order could shift :-)
-        return Object.entries(stateWithRemoved).reduce(
-          (acc, [currId, currVal], index) => {
-            if (currId !== action.payload.id) {
-              return {
-                ...acc,
-                [currId]: {
-                  ...(currVal as {}),
-                  number: index + 1,
-                },
-              };
-            }
-            return acc;
-          },
-          {}
-        );
+        const waypointsWithNumbers = Object.entries(
+          waypointsWithRemoved
+        ).reduce((acc, [currId, currVal], index) => {
+          if (currId !== action.payload.id) {
+            return {
+              ...acc,
+              [currId]: {
+                ...(currVal as {}),
+                number: index + 1,
+              },
+            };
+          }
+          return acc;
+        }, {});
 
-      case WaypointsActionType.Reorder:
+        return {
+          ...currentState,
+          timestamp: Date.now(),
+          waypoints: {
+            ...waypointsWithNumbers,
+          },
+        };
+
+      case StateActionType.ReorderWaypoint:
         // Takes the array of ids passed in and returns a new state object
-        const newState = action.payload.reduce((acc, curr) => {
+        const newReorderedWaypoints = action.payload.reduce((acc, curr) => {
           return {
             ...acc,
             [curr]: {
-              ...(currentState[curr] as {}),
+              ...(currentState.waypoints[curr] as {}),
               number: Object.keys(acc).length + 1,
             },
           };
         }, {});
 
-        return newState;
+        return {
+          ...currentState,
+          timestamp: Date.now(),
+          waypoints: {
+            ...newReorderedWaypoints,
+          },
+        };
+
+      case StateActionType.UpdateGpx:
+        const updatedWaypoints = updateWaypointsToNearestCoords(
+          action.payload,
+          currentState.waypoints
+        );
+
+        if (updatedWaypoints) {
+          return {
+            ...currentState,
+            waypoints: {
+              ...updatedWaypoints,
+            },
+            gpx: action.payload,
+          };
+        }
+
+        return {
+          ...currentState,
+          gpx: action.payload,
+        };
+
+      case StateActionType.UpdateWaypoint:
+        return {
+          ...currentState,
+        };
 
       default:
         throw new Error();
     }
   };
 
-  const [waypointsState, waypointsDispatch] = useReducer(
-    waypointsReducer,
-    initialWaypointsState
-  );
-
-  const [gpxState, setGpxState] = useState<Gpx>(null);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
     const fetchGpx = async () => {
-      const gpx = await getGpx(waypointsState);
-      setGpxState(gpx);
+      const gpx = await getGpx(state.waypoints);
+      dispatch({
+        type: StateActionType.UpdateGpx,
+        payload: gpx,
+      });
     };
 
-    if (waypointsState && Object.keys(waypointsState).length >= 2) {
+    if (state.timestamp !== timestamp.current) {
       fetchGpx();
-    } else if (Object.keys(waypointsState).length <= 1) {
-      setGpxState(null);
     }
-  }, [waypointsState]);
+  }, [state.timestamp]); // TODO: Fix deps
 
   return (
     <Context.Provider
       value={{
-        waypointsState,
-        waypointsDispatch,
-        gpxState,
+        state,
+        dispatch,
       }}
     >
       {children}

@@ -7,12 +7,12 @@ import "./Map.scss";
 
 import {
   Context,
-  WaypointsState,
-  WaypointsActionType,
+  StateActionType,
+  WaypointStateItem,
 } from "../../context/Context";
 import { Marker } from "../Marker/Marker";
 
-const renderMarkers = (markers: WaypointsState, map: Leaflet.Map) =>
+const renderMarkers = (markers: WaypointStateItem, map: Leaflet.Map) =>
   Object.entries(markers).map((marker) => {
     const [id, value] = marker;
     return (
@@ -32,7 +32,7 @@ export const Map: React.FC = () => {
   const mapObj = useRef(null);
   const mapGpx = useRef(null);
 
-  const { waypointsState, waypointsDispatch, gpxState } = useContext(Context);
+  const { state, dispatch } = useContext(Context);
 
   // Setup map
   useEffect(() => {
@@ -46,10 +46,10 @@ export const Map: React.FC = () => {
       dragging: !Leaflet.Browser.mobile,
       tap: !Leaflet.Browser.mobile,
     })
-      .setView([51.4446,-2.6449], 15)
+      .setView([51.4446, -2.6449], 15)
       .on("click", (e: LeafletMouseEvent) => {
-        waypointsDispatch({
-          type: WaypointsActionType.Add,
+        dispatch({
+          type: StateActionType.AddWaypoint,
           payload: {
             ...e.latlng,
           },
@@ -61,13 +61,13 @@ export const Map: React.FC = () => {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(mapObj.current);
-  }, [waypointsDispatch]);
+  }, [dispatch]);
 
   // Setup gpx
   useEffect(() => {
     // If the gpx data is null, clear the map so no
     // old gpx data is still rendered
-    if (gpxState == null) {
+    if (state.gpx == null) {
       if (mapGpx.current) {
         mapObj.current.removeLayer(mapGpx.current);
       }
@@ -75,12 +75,12 @@ export const Map: React.FC = () => {
     }
 
     // Clear the current line before drawing a new one
-    if (mapGpx.current || gpxState == null) {
+    if (mapGpx.current || state.gpx == null) {
       mapObj.current.removeLayer(mapGpx.current);
     }
 
     // Plot GPX
-    mapGpx.current = new LeafletGpx.GPX(gpxState, {
+    mapGpx.current = new LeafletGpx.GPX(state.gpx, {
       async: true,
       polyline_options: {
         color: "#0f86e8",
@@ -99,14 +99,14 @@ export const Map: React.FC = () => {
         className: "waypoint-icon",
       },
     }).addTo(mapObj.current);
-  }, [gpxState]);
+  }, [state.gpx]);
 
   return (
     <div className="map" id="jam">
       <div id="mapid" ref={mapEl}></div>
       {mapObj.current &&
-        waypointsState &&
-        renderMarkers(waypointsState, mapObj.current)}
+        state?.waypoints &&
+        renderMarkers(state.waypoints, mapObj.current)}
     </div>
   );
 };
