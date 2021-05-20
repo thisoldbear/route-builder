@@ -2,16 +2,16 @@ import React, { useContext, useState } from "react";
 import "./WaypointsList.scss";
 import {
   Context,
-  WaypointsState,
-  WaypointsActionType,
+  StateActionType,
+  WaypointStateItem,
 } from "../../context/Context";
 
 export const WaypointsList: React.FC = () => {
-  const { waypointsState, waypointsDispatch } = useContext(Context);
+  const { state, dispatch } = useContext(Context);
   const [hoverTargetId, setHoverTargetId] = useState(null);
   const [dragItemId, setDragItemId] = useState(null);
 
-  const renderWaypointsList = (waypoints: WaypointsState) =>
+  const renderWaypointsList = (waypoints: WaypointStateItem) =>
     Object.entries(waypoints).map((waypoint) => {
       const [id, value] = waypoint;
       return (
@@ -37,8 +37,8 @@ export const WaypointsList: React.FC = () => {
           <button
             className="waypoints-list__item-remove"
             onClick={() => {
-              waypointsDispatch({
-                type: WaypointsActionType.Remove,
+              dispatch({
+                type: StateActionType.RemoveWaypoint,
                 payload: {
                   id,
                 },
@@ -73,12 +73,12 @@ export const WaypointsList: React.FC = () => {
         const movedItemId = e.dataTransfer.getData("id");
         const targetItem = e.target as HTMLElement;
         const targetItemId = targetItem.dataset.id;
-        const waypointsStateIds = Object.keys(waypointsState);
+        const waypointsStateIds = Object.keys(state.waypoints);
         const movedItemOriginalIndex = waypointsStateIds.indexOf(movedItemId);
         const targetItemOriginalIndex = waypointsStateIds.indexOf(targetItemId);
 
-        waypointsDispatch({
-          type: WaypointsActionType.Reorder,
+        dispatch({
+          type: StateActionType.ReorderWaypoint,
           payload: move(
             [...waypointsStateIds],
             movedItemOriginalIndex,
@@ -94,8 +94,8 @@ export const WaypointsList: React.FC = () => {
         setDragItemId(null);
       }}
     >
-      {Object.keys(waypointsState).length > 0 ? (
-        renderWaypointsList(waypointsState)
+      {Object.keys(state).length > 0 ? (
+        renderWaypointsList(state.waypoints)
       ) : (
         <p>Click on the map to set a start point</p>
       )}

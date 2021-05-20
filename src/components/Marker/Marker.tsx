@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useContext } from "react";
 import Leaflet from "leaflet";
 import ReactDOM from "react-dom";
-import { Context, Waypoint, WaypointsActionType } from "../../context/Context";
+import { Context, Waypoint, StateActionType } from "../../context/Context";
 
 import "./Marker.scss";
 
@@ -18,7 +18,7 @@ export const Marker: React.FC<MarkerProps> = ({
 }) => {
   const marker = useRef<Leaflet.Marker | null>(null);
 
-  const { waypointsDispatch } = useContext(Context);
+  const { dispatch } = useContext(Context);
 
   useEffect(() => {
     if (lat && lng && number) {
@@ -42,8 +42,8 @@ export const Marker: React.FC<MarkerProps> = ({
           <button
             className="marker__button"
             onClick={() => {
-              waypointsDispatch({
-                type: WaypointsActionType.Remove,
+              dispatch({
+                type: StateActionType.RemoveWaypoint,
                 payload: {
                   id,
                 },
@@ -61,7 +61,7 @@ export const Marker: React.FC<MarkerProps> = ({
     return () => {
       map.removeLayer(marker.current);
     };
-  }, [id, lat, lng, map, number, waypointsDispatch]);
+  }, [id, lat, lng, map, number, dispatch]);
 
   return null;
 };
