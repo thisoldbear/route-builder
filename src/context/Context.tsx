@@ -18,6 +18,7 @@ export interface State {
   waypoints: WaypointStateItem;
   gpx: Gpx;
   timestamp: number;
+  disableMapClick: boolean;
 }
 
 interface ContextProps {
@@ -42,8 +43,6 @@ interface ContextProviderProps {
   children: React.ReactNode;
 }
 
-
-
 const Context = createContext<Partial<ContextProps>>({});
 
 const ContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
@@ -51,6 +50,7 @@ const ContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
     waypoints: {},
     gpx: null,
     timestamp: null,
+    disableMapClick: false,
   };
 
   const timestamp = useRef(Date.now());
@@ -58,21 +58,32 @@ const ContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
   const reducer = (currentState: State, action: StateAction) => {
     switch (action.type) {
       case StateActionType.AddWaypoint:
-        // Add the item to state
-        const stateWithAdded = {
-          ...currentState,
-          timestamp: Date.now(),
-          waypoints: {
-            ...currentState.waypoints,
-            [`${action.payload.lat}${action.payload.lng}`]: {
-              lat: action.payload.lat,
-              lng: action.payload.lng,
-              number: Object.entries(currentState.waypoints).length + 1,
-            },
-          },
-        };
+        let state;
 
-        return stateWithAdded;
+        // Do not allow more than 5
+        // as the Graph Hopper API is limited
+        if (Object.entries(currentState.waypoints).length >= 5) {
+          state = {
+            ...currentState,
+            disableMapClick: true
+          }
+        } else {
+          state = {
+            ...currentState,
+            timestamp: Date.now(),
+            disableMapClick: false,
+            waypoints: {
+              ...currentState.waypoints,
+              [`${action.payload.lat}${action.payload.lng}`]: {
+                lat: action.payload.lat,
+                lng: action.payload.lng,
+                number: Object.entries(currentState.waypoints).length + 1,
+              },
+            },
+          };
+        }
+
+        return state;
 
       case StateActionType.RemoveWaypoint:
         // Removes the waypoint from state using the id, in a slightly convoluted way :-\
@@ -110,6 +121,7 @@ const ContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
         return {
           ...currentState,
           timestamp: Date.now(),
+          disableMapClick: false,
           waypoints: {
             ...waypointsWithNumbers,
           },
