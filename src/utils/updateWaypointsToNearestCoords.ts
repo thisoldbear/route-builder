@@ -1,4 +1,3 @@
-
 import gpxParser from "gpxparser";
 import { WaypointStateItem } from "../context/Context";
 import { diffPropertyCompare, numberDiff } from "./utils";

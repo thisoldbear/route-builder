@@ -18,9 +18,11 @@ export const WaypointsList: React.FC = () => {
         <li
           key={id}
           draggable="true"
-          className={`waypoints-list__item ${
-            hoverTargetId === id && "waypoints-list__item--target"
-          } ${dragItemId === id && "waypoints-list__item--dragging"}`}
+          className={`
+            waypoints-list__item
+            ${hoverTargetId === id ? "waypoints-list__item--target" : ""}
+            ${dragItemId === id ? "waypoints-list__item--dragging" : ""}
+          `}
           data-id={id}
           onDragStart={(e) => {
             e.dataTransfer.setData("id", id);
@@ -94,11 +96,23 @@ export const WaypointsList: React.FC = () => {
         setDragItemId(null);
       }}
     >
-      {Object.keys(state).length > 0 ? (
-        renderWaypointsList(state.waypoints)
-      ) : (
-        <p>Click on the map to set a start point</p>
-      )}
+      <>
+        {Object.keys(state.waypoints).length > 0 ? (
+          renderWaypointsList(state.waypoints)
+        ) : (
+          <>
+            <p>Click on the map to set a start point.</p>
+            <p>
+              You may add <strong>up to 5</strong>.
+            </p>
+          </>
+        )}
+        {state.disableMapClick &&
+          <li className="waypoints-list__item waypoints-list__item--warning">
+            You have reached the max number of waypoints allowed
+          </li>
+        }
+      </>
     </ul>
   );
 };
