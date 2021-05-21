@@ -19,6 +19,10 @@ export interface State {
   gpx: Gpx;
   timestamp: number;
   disableMapClick: boolean;
+  geolocation: {
+    longitude: number | null,
+    latitude: number | null
+  }
 }
 
 interface ContextProps {
@@ -32,6 +36,7 @@ export enum StateActionType {
   ReorderWaypoint = "REORDER_WAYPOINT",
   UpdateWaypoint = "UPDATE_WAYPOINT",
   UpdateGpx = "UPDATE_GPX",
+  UpdateGeolocation = "UPDATE_GEOLOCATION",
 }
 
 export interface StateAction {
@@ -51,6 +56,10 @@ const ContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
     gpx: null,
     timestamp: null,
     disableMapClick: false,
+    geolocation: {
+      latitude: null,
+      longitude: null,
+    }
   };
 
   const timestamp = useRef(Date.now());
@@ -171,6 +180,14 @@ const ContextProvider: React.FC<ContextProviderProps> = ({ children }) => {
       case StateActionType.UpdateWaypoint:
         return {
           ...currentState,
+        };
+
+      case StateActionType.UpdateGeolocation:
+        return {
+          ...currentState,
+          geolocation: {
+            ...action.payload,
+          },
         };
 
       default:

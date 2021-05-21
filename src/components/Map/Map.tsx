@@ -34,6 +34,18 @@ export const Map: React.FC = () => {
 
   const { state, dispatch } = useContext(Context);
 
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition((position) => {
+      dispatch({
+        type: StateActionType.UpdateGeolocation,
+        payload: {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        },
+      });
+    });
+  }, [])
+
   // Setup map
   useEffect(() => {
     if (mapObj.current) {
@@ -46,7 +58,7 @@ export const Map: React.FC = () => {
       dragging: !Leaflet.Browser.mobile,
       tap: !Leaflet.Browser.mobile,
     })
-      .setView([51.4446, -2.6449], 15)
+      .setView([state?.geolocation?.latitude ?? 51.4446, state?.geolocation?.latitude ?? -2.6449], 15)
       .on("click", (e: LeafletMouseEvent) => {
         dispatch({
           type: StateActionType.AddWaypoint,
@@ -61,7 +73,7 @@ export const Map: React.FC = () => {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(mapObj.current);
-  }, [dispatch]);
+  }, []);
 
   // Setup gpx
   useEffect(() => {
@@ -100,6 +112,13 @@ export const Map: React.FC = () => {
       },
     }).addTo(mapObj.current);
   }, [state.gpx]);
+
+  // Pan map if geolocation is updated
+  useEffect(() => {
+    if (mapObj.current && state?.geolocation?.latitude && state?.geolocation?.latitude) {
+      mapObj.current.panTo([state.geolocation.latitude, state.geolocation.longitude])
+    }
+  }, [state.geolocation.latitude, state.geolocation.longitude])
 
   return (
     <div className="map" id="jam">
