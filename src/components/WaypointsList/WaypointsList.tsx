@@ -47,7 +47,7 @@ export const WaypointsList: React.FC = () => {
               });
             }}
           >
-            🗑
+            Delete
           </button>
         </li>
       );
